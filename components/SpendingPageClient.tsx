@@ -22,7 +22,7 @@ export function SpendingPageClient() {
   const [loading, setLoading] = useState(true);
   const [spending, setSpending] = useState<SpendingEntry[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [userId, setUserId] = useState('');
+  const [userId, setUserId] = useState<string>('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<SpendingEntry | undefined>();
@@ -32,6 +32,11 @@ export function SpendingPageClient() {
     const loadData = async () => {
       try {
         setLoading(true);
+
+        const meRes = await fetch('/api/auth/me');
+        if (!meRes.ok) throw new Error('Failed to fetch user');
+        const meData = await meRes.json();
+        setUserId(meData.id);
 
         const spendingRes = await fetch(
           `/api/spending?category=${filter.category}&startDate=${filter.startDate}&endDate=${filter.endDate}`

@@ -19,7 +19,7 @@ export function SavingsPageClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [savings, setSavings] = useState<SavingsEntry[]>([]);
-  const [userId, setUserId] = useState('');
+  const [userId, setUserId] = useState<string>('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<SavingsEntry | undefined>();
@@ -28,6 +28,11 @@ export function SavingsPageClient() {
     const loadData = async () => {
       try {
         setLoading(true);
+
+        const meRes = await fetch('/api/auth/me');
+        if (!meRes.ok) throw new Error('Failed to fetch user');
+        const meData = await meRes.json();
+        setUserId(meData.id);
 
         const savingsRes = await fetch('/api/savings');
         if (!savingsRes.ok) throw new Error('Failed to fetch savings');

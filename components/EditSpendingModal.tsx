@@ -20,7 +20,7 @@ interface EditSpendingModalProps {
   isOpen: boolean;
   entry?: SpendingEntry;
   onClose: () => void;
-  onSubmit: (data: SpendingInput) => void;
+  onSubmit: (data: SpendingInput) => Promise<void>;
   categories: string[];
 }
 

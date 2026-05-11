@@ -12,7 +12,7 @@ interface SpendingInput {
 interface AddSpendingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: SpendingInput) => void;
+  onSubmit: (data: SpendingInput) => Promise<void>;
   categories: string[];
 }
 

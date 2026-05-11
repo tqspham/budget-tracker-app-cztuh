@@ -17,17 +17,17 @@ export async function GET(request: NextRequest) {
     const { data: users, error } = await supabase
       .from('budget_tracker_app_cztuh_users')
       .select('id, email')
-      .limit(1);
+      .eq('id', token.value)
+      .single();
 
-    if (error || !users || users.length === 0) {
+    if (error || !users) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
 
-    const user = users[0];
-    return NextResponse.json({ id: user.id, email: user.email });
+    return NextResponse.json({ id: users.id, email: users.email });
   } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },

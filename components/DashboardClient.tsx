@@ -31,7 +31,7 @@ export function DashboardClient() {
   const [spending, setSpending] = useState<SpendingEntry[]>([]);
   const [savings, setSavings] = useState<SavingsEntry[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [userId, setUserId] = useState('');
+  const [userId, setUserId] = useState<string>('');
   const [isAddSpendingOpen, setIsAddSpendingOpen] = useState(false);
   const [isAddSavingsOpen, setIsAddSavingsOpen] = useState(false);
   const [editingSpendingId, setEditingSpendingId] = useState<string | null>(null);
@@ -41,6 +41,11 @@ export function DashboardClient() {
     const loadData = async () => {
       try {
         setLoading(true);
+
+        const meRes = await fetch('/api/auth/me');
+        if (!meRes.ok) throw new Error('Failed to fetch user');
+        const meData = await meRes.json();
+        setUserId(meData.id);
 
         const spendingRes = await fetch('/api/spending');
         if (!spendingRes.ok) throw new Error('Failed to fetch spending');

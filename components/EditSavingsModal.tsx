@@ -18,7 +18,7 @@ interface EditSavingsModalProps {
   isOpen: boolean;
   entry?: SavingsEntry;
   onClose: () => void;
-  onSubmit: (data: SavingsInput) => void;
+  onSubmit: (data: SavingsInput) => Promise<void>;
 }
 
 export function EditSavingsModal({

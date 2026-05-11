@@ -11,7 +11,7 @@ interface SavingsInput {
 interface AddSavingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: SavingsInput) => void;
+  onSubmit: (data: SavingsInput) => Promise<void>;
 }
 
 export function AddSavingsModal({
