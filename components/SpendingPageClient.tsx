@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/authStore';
 import { SpendingList } from './SpendingList';
 import { FilterPanel } from './FilterPanel';
 import { AddSpendingModal } from './AddSpendingModal';
@@ -19,25 +20,30 @@ interface SpendingEntry {
 
 export function SpendingPageClient() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const { user, setUser, isLoading, setLoading } = useAuthStore();
   const [spending, setSpending] = useState<SpendingEntry[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [userId, setUserId] = useState<string>('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<SpendingEntry | undefined>();
   const [filter, setFilter] = useState({ category: '', startDate: '', endDate: '' });
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
 
+        // Verify session
         const meRes = await fetch('/api/auth/me');
-        if (!meRes.ok) throw new Error('Failed to fetch user');
+        if (!meRes.ok) {
+          router.push('/');
+          return;
+        }
         const meData = await meRes.json();
-        setUserId(meData.id);
+        setUser(meData);
 
+        // Load spending data
         const spendingRes = await fetch(
           `/api/spending?category=${filter.category}&startDate=${filter.startDate}&endDate=${filter.endDate}`
         );
@@ -45,6 +51,7 @@ export function SpendingPageClient() {
         const spendingData = await spendingRes.json();
         setSpending(spendingData.entries);
 
+        // Load categories
         const categoriesRes = await fetch('/api/categories');
         if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
         const categoriesData = await categoriesRes.json();
@@ -53,18 +60,23 @@ export function SpendingPageClient() {
         router.push('/');
       } finally {
         setLoading(false);
+        setDataLoading(false);
       }
     };
 
-    loadData();
-  }, [filter, router]);
+    if (!user && isLoading) {
+      loadData();
+    } else if (user) {
+      setDataLoading(false);
+    }
+  }, [filter, user, isLoading, setUser, setLoading, router]);
 
   const handleAddSpending = async (data: any) => {
     try {
       const res = await fetch('/api/spending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, userId }),
+        body: JSON.stringify({ ...data, userId: user?.id }),
       });
       if (!res.ok) throw new Error('Failed to add spending');
       const newEntry = await res.json();
@@ -117,7 +129,7 @@ export function SpendingPageClient() {
     }
   };
 
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <p className="text-gray-600">Loading...</p>

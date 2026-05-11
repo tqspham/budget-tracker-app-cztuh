@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/authStore';
 import { SavingsList } from './SavingsList';
 import { AddSavingsModal } from './AddSavingsModal';
 import { EditSavingsModal } from './EditSavingsModal';
@@ -17,23 +18,28 @@ interface SavingsEntry {
 
 export function SavingsPageClient() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const { user, setUser, isLoading, setLoading } = useAuthStore();
   const [savings, setSavings] = useState<SavingsEntry[]>([]);
-  const [userId, setUserId] = useState<string>('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<SavingsEntry | undefined>();
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
 
+        // Verify session
         const meRes = await fetch('/api/auth/me');
-        if (!meRes.ok) throw new Error('Failed to fetch user');
+        if (!meRes.ok) {
+          router.push('/');
+          return;
+        }
         const meData = await meRes.json();
-        setUserId(meData.id);
+        setUser(meData);
 
+        // Load savings data
         const savingsRes = await fetch('/api/savings');
         if (!savingsRes.ok) throw new Error('Failed to fetch savings');
         const savingsData = await savingsRes.json();
@@ -42,18 +48,23 @@ export function SavingsPageClient() {
         router.push('/');
       } finally {
         setLoading(false);
+        setDataLoading(false);
       }
     };
 
-    loadData();
-  }, [router]);
+    if (!user && isLoading) {
+      loadData();
+    } else if (user) {
+      setDataLoading(false);
+    }
+  }, [user, isLoading, setUser, setLoading, router]);
 
   const handleAddSavings = async (data: any) => {
     try {
       const res = await fetch('/api/savings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, userId }),
+        body: JSON.stringify({ ...data, userId: user?.id }),
       });
       if (!res.ok) throw new Error('Failed to add savings');
       const newEntry = await res.json();
@@ -106,7 +117,7 @@ export function SavingsPageClient() {
     }
   };
 
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <p className="text-gray-600">Loading...</p>

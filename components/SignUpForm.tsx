@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/authStore';
 
 export function SignUpForm() {
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -62,6 +64,8 @@ export function SignUpForm() {
         return;
       }
 
+      // Set auth store before navigation to prevent race condition
+      setUser(data.user);
       router.push('/dashboard');
     } catch (err) {
       setError('An error occurred. Please try again.');
