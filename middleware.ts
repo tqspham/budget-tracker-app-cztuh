@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAuthToken } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 const PROTECTED_ROUTES = ['/dashboard'];
 
@@ -17,9 +17,19 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url));
     }
 
-    const user = await verifyAuthToken(token.value);
+    try {
+      const { data: user, error } = await supabase
+        .from('budget_tracker_app_cztuh_users')
+        .select('id, email')
+        .eq('id', token.value)
+        .single();
 
-    if (!user) {
+      if (error || !user) {
+        const response = NextResponse.redirect(new URL('/', request.url));
+        response.cookies.delete('auth_token');
+        return response;
+      }
+    } catch (err) {
       const response = NextResponse.redirect(new URL('/', request.url));
       response.cookies.delete('auth_token');
       return response;

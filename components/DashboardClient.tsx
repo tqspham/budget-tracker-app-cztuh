@@ -28,7 +28,7 @@ interface SavingsEntry {
 
 export function DashboardClient() {
   const router = useRouter();
-  const { user, setUser, isLoading, setLoading } = useAuthStore();
+  const { user, isLoading, setLoading, checkSession } = useAuthStore();
   const [spending, setSpending] = useState<SpendingEntry[]>([]);
   const [savings, setSavings] = useState<SavingsEntry[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -39,30 +39,27 @@ export function DashboardClient() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
-
-        // Verify session
-        const meRes = await fetch('/api/auth/me');
-        if (!meRes.ok) {
+        if (!isLoading && !user) {
           router.push('/');
           return;
         }
-        const meData = await meRes.json();
-        setUser(meData);
 
-        // Load spending data
+        if (isLoading) {
+          return;
+        }
+
+        setLoading(true);
+
         const spendingRes = await fetch('/api/spending');
         if (!spendingRes.ok) throw new Error('Failed to fetch spending');
         const spendingData = await spendingRes.json();
         setSpending(spendingData.entries);
 
-        // Load savings data
         const savingsRes = await fetch('/api/savings');
         if (!savingsRes.ok) throw new Error('Failed to fetch savings');
         const savingsData = await savingsRes.json();
         setSavings(savingsData.entries);
 
-        // Load categories
         const categoriesRes = await fetch('/api/categories');
         if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
         const categoriesData = await categoriesRes.json();
@@ -75,12 +72,12 @@ export function DashboardClient() {
       }
     };
 
-    if (!user && isLoading) {
+    if (!isLoading && user) {
       loadData();
-    } else if (user) {
-      setDataLoading(false);
+    } else if (isLoading) {
+      checkSession();
     }
-  }, [user, isLoading, setUser, setLoading, router]);
+  }, [isLoading, user, router, setLoading, checkSession]);
 
   const handleAddSpending = async (data: any) => {
     try {
@@ -136,7 +133,8 @@ export function DashboardClient() {
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    setUser(null);
+    const { logout } = useAuthStore.getState();
+    logout();
     router.push('/');
   };
 
