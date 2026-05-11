@@ -33,7 +33,6 @@ export function LoginForm() {
         return;
       }
 
-      // Set auth store before navigation to prevent race condition
       setUser(data.user);
       router.push('/dashboard');
     } catch (err) {
